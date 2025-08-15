@@ -1,4 +1,5 @@
-# Java Microservices Project 
+# Mini Shop
+### Java Microservices Project 
 <sub> (Spring Boot, MySQL, MongoDB, Eureka, Feign, Swagger) </sub>
 
 ## 📌 Project Overview
