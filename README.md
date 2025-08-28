@@ -8,27 +8,39 @@ It demonstrates inter-service communication, service discovery, and database int
 
 We have **three services**:
 1. **Eureka Server** – Service Registry for discovery.
-2. **Product Service** – Manages products (CRUD + stock management) using **MySQL**.
-3. **Order Service** – Places orders using **MongoDB** and communicates with Product Service via **Feign Client**.
+2. API Gateway – Central entry point for routing client requests to microservices
+3. **Product Service** – Manages products (CRUD + stock management) using **MySQL**.
+4. **Order Service** – Places orders using **MongoDB** and communicates with Product Service via **Feign Client**.
 
 ---
 
 ## 🏗 Architecture Diagram
 ```
-+--------------+       +----------------+
-| Eureka Server|       | Swagger (API UI)|
-+--------------+       +----------------+
-       ↑                       ↑
-       |                       |
-       ↓                       ↓
-+----------------+     +----------------+
-| Product Service|<--->| Order Service  |
-| (MySQL, JPA)   |     | (MongoDB)      |
-+----------------+     +----------------+
+         +----------------+
+         | Swagger (API UI)|
+         +----------------+
+                  |
+                  ↓
+           +---------------+
+           | API Gateway   |
+           +---------------+
+            |            |
+            ↓            ↓
+   +----------------+  +----------------+
+   | Product Service|  | Order Service  |
+   | (MySQL, JPA)   |  | (MongoDB)      |
+   +----------------+  +----------------+
+           ↑
+           |
+    +--------------+
+    | Eureka Server|
+    +--------------+
+
 
 ```
 
 - **Service Discovery:** Eureka ensures that services can find each other dynamically (no hardcoded URLs).
+- **API Gateway:** Acts as a single entry point for clients, routing requests to respective microservices.
 - **Inter-service Calls:** Handled by Feign Client.
 - **Databases:** MySQL for Product Service, MongoDB for Order Service.
 - **API Documentation:** Swagger UI / OpenAPI.
@@ -54,11 +66,14 @@ microservices-project/
 │
 ├── eureka-server/ # Service Discovery Server
 │
+├── api-gateway/   # API Gateway (Spring Cloud Gateway)
+│
 ├── product-service/ # Product Management Service (MySQL)
 │
-├── order-service/ # Order Management Service (MongoDB, Feign client to Product Service)
+├── order-service/   # Order Management Service (MongoDB, Feign client to Product Service)
 │
-└── README.md # Project documentation
+└── README.md        # Project documentation
+
 ```
 
 ---
@@ -94,7 +109,13 @@ eureka.client.fetch-registry=true
 1. Start MongoDB server.
 2. Update order-service/src/main/resources/application.properties:
 ```
+# mongoDB
 spring.data.mongodb.uri=mongodb://localhost:27017/orderdb
+
+# Eureka
+eureka.client.service-url.defaultZone=http://localhost:8761/eureka
+eureka.client.register-with-eureka=true
+eureka.client.fetch-registry=true
 
 ```
 Eureka Dashboard → http://localhost:8761
@@ -105,6 +126,11 @@ Eureka Dashboard → http://localhost:8761
 
 - Product: http://localhost:8081/swagger-ui.html
 - Order: http://localhost:8082/swagger-ui.html
+
+## API Gateway
+Clients should access services via the gateway:
+- Product Service: http://localhost:8080/products/...
+- Order Service: http://localhost:8080/orders/...
 
 ## Product Service:
 
@@ -124,6 +150,7 @@ Eureka Dashboard → http://localhost:8761
 
 ## 🔗 Flow
 
+- Client → API Gateway → routes request to respective microservice.
 - Order Service → calls Product Service (Feign) to reserve stock.
 - Product Service → updates stock in MySQL.
 - Order Service → saves order in MongoDB.
